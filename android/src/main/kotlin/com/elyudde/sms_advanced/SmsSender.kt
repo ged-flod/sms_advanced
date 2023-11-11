@@ -17,6 +17,9 @@ import io.flutter.plugin.common.MethodChannel.MethodCallHandler
 import io.flutter.plugin.common.PluginRegistry.RequestPermissionsResultListener
 import java.util.*
 
+import android.telephony.SubscriptionInfo
+import android.telephony.SubscriptionManager
+
 
 /**
  * Created by crazygenius on 1/08/21.
@@ -66,7 +69,7 @@ internal class SmsSenderMethodHandler(
     @TargetApi(Build.VERSION_CODES.KITKAT)
     private fun sendSmsMessage() {
         val sentIntent = Intent("SMS_SENT")
-        .putExtra("sentId", sentId)
+            .putExtra("sentId", sentId)
         val sentPendingIntent = PendingIntent.getBroadcast(
             context,
             0,
@@ -84,8 +87,16 @@ internal class SmsSenderMethodHandler(
         val sms: SmsManager = if (subId == null) {
             SmsManager.getDefault()
         } else {
+
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP_MR1) {
-                SmsManager.getSmsManagerForSubscriptionId(subId)
+
+
+                val subscriptionManager = SubscriptionManager.from(context)
+                val activeSubscriptionInfoList = subscriptionManager.activeSubscriptionInfoList
+
+                val simCard = activeSubscriptionInfoList[subId - 1]
+
+                SmsManager.getSmsManagerForSubscriptionId(simCard.subscriptionId)
             } else {
                 result.error("#03", "this version of android does not support multicard SIM", null)
                 return
